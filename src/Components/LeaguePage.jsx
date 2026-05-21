@@ -10,6 +10,7 @@ import LeaderboardPage from "./LeaderboardPage";
 import ChatWindow from "./ChatWindow";
 import { generateMatchups } from "./matchups";
 import MatchupPage from "./matchupPage";
+import AppShell from "./AppShell.jsx";
 
 const tabs = ["Matchup", "Buy/Sell", "Portfolio", "Leaderboard", "Add/Drop", "Chat"];
 
@@ -30,6 +31,8 @@ const LeaguePage = () => {
   const [activeTab, setActiveTab] = useState(tabs[1]);
 
   const userId = session?.user?.id;
+  const currentMember = members.find((member) => member.user_id === userId);
+  const portfolioDisplayName = currentMember?.display_name || session?.user?.email || "Trader";
 
   useEffect(() => {
     const fetchLeagueData = async () => {
@@ -107,19 +110,16 @@ const LeaguePage = () => {
   };
 
   return (
-    <div className="scanlines min-h-screen bg-black text-slate-300">
-      {/* Nav */}
-      <div className="border-b border-zinc-900 bg-zinc-950 px-6 py-3 flex items-center justify-between">
-        <span className="font-mono font-black text-white tracking-tight">
-          FANTASY<span className="text-emerald-400">STOCKS</span>
-        </span>
+    <AppShell
+      headerRight={
         <button
           onClick={() => navigate("/dashboard")}
           className="border border-zinc-700 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 font-mono text-xs px-4 py-1.5 rounded tracking-widest transition-all duration-200"
         >
           ← DASHBOARD
         </button>
-      </div>
+      }
+    >
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         {/* League header */}
@@ -222,7 +222,13 @@ const LeaguePage = () => {
           <div className="p-0">
             {activeTab === tabs[0] && <MatchupPage leagueId={leagueId} />}
             {activeTab === tabs[1] && <BuySellStock leagueMemberId={leagueMemberId} />}
-            {activeTab === tabs[2] && <Portfolio leagueMemberId={leagueMemberId} />}
+            {activeTab === tabs[2] && (
+              <Portfolio
+                leagueMemberId={leagueMemberId}
+                leagueName={leagueName}
+                displayName={portfolioDisplayName}
+              />
+            )}
             {activeTab === tabs[3] && <LeaderboardPage leagueId={leagueId} />}
             {activeTab === tabs[4] && (
               <AddDropStock leagueId={leagueId} userId={userId} leagueMemberId={leagueMemberId} members={members} />
@@ -235,7 +241,7 @@ const LeaguePage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 };
 

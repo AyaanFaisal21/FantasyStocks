@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "../supabaseClient";
 import { UserAuth } from "../context/AuthContext";
+import AppShell from "./AppShell";
 
 const CreateProfile = () => {
   const [displayName, setDisplayName] = useState("");
@@ -28,8 +29,9 @@ const CreateProfile = () => {
   };
 
   return (
-    <div className="scanlines min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <AppShell>
+      <div className="min-h-[calc(100vh-92px)] flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black tracking-tight text-white font-mono">
             FANTASY<span className="text-emerald-400">STOCKS</span>
@@ -75,8 +77,9 @@ const CreateProfile = () => {
             </button>
           </form>
         </div>
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 };
 

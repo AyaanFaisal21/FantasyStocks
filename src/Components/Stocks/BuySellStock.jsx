@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 
 const handleSell = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares, setError }) => {
@@ -34,12 +34,10 @@ export { handleSell };
 const ToggleButton = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex-1 py-2 font-mono text-xs tracking-widest uppercase transition-all duration-200 rounded ${
+    className={`flex-1 py-2 font-mono text-xs tracking-widest uppercase transition-all duration-200 rounded border ${
       active
-        ? label === 'BUY' || label === 'SHARES'
-          ? 'bg-emerald-500 text-black border border-emerald-500'
-          : 'bg-red-500 text-white border border-red-500'
-        : 'border border-zinc-700 text-zinc-500 hover:border-zinc-500'
+        ? 'bg-transparent text-white border-white shadow-[0_0_14px_rgba(255,255,255,0.45),inset_0_0_12px_rgba(255,255,255,0.08)] [text-shadow:0_0_10px_rgba(255,255,255,0.85)]'
+        : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
     }`}
   >
     {label}
@@ -56,6 +54,31 @@ const BuySellStock = ({ leagueMemberId }) => {
   const [stockError, setStockError] = useState('');
   const [loading, setLoading] = useState(false);
   const [txSuccess, setTxSuccess] = useState('');
+  const [tradableStocks, setTradableStocks] = useState([]);
+  const [tradableLoading, setTradableLoading] = useState(false);
+
+  const fetchTradableStocks = useCallback(async () => {
+    if (!leagueMemberId) {
+      setTradableStocks([]);
+      return;
+    }
+
+    setTradableLoading(true);
+    const { data, error } = await supabase
+      .from("user_stocks")
+      .select("Ticker")
+      .eq("league_member_id", leagueMemberId)
+      .order("Ticker", { ascending: true });
+
+    if (!error) {
+      setTradableStocks((data || []).map((stock) => stock.Ticker));
+    }
+    setTradableLoading(false);
+  }, [leagueMemberId]);
+
+  useEffect(() => {
+    fetchTradableStocks();
+  }, [fetchTradableStocks]);
 
   const fetchStockInfo = async (e) => {
     e.preventDefault();
@@ -68,7 +91,7 @@ const BuySellStock = ({ leagueMemberId }) => {
       const data = await res.json();
       if (!res.ok) { setStockError(data.detail || "Stock data not found."); return { error: true }; }
       else { setResult(data); return { result: data }; }
-    } catch (err) {
+    } catch {
       setStockError("Failed to fetch stock price — is the backend running?");
       return { error: true };
     } finally {
@@ -96,12 +119,15 @@ const BuySellStock = ({ leagueMemberId }) => {
       const res = await fetch(`http://localhost:8000/hasTicker?leagueMemberId=${leagueMemberId}&ticker=${symbol}`);
       const data = await res.json();
       return data.has_ticker;
-    } catch (err) { return false; }
+    } catch { return false; }
   };
 
   const handleBuy = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares }) => {
     const hasTicker = await checkHasTicker({ leagueMemberId, symbol });
-    if (!hasTicker) { setError("You cannot trade this stock"); throw new Error("You cannot trade this stock"); }
+    if (!hasTicker) {
+      setError(`${symbol} is not in your tradable stocks. Add or draft it in the Add/Drop tab before buying.`);
+      return;
+    }
 
     const portfolio = await getOrCreatePortfolio(leagueMemberId);
     if (!portfolio) return;
@@ -178,6 +204,43 @@ const BuySellStock = ({ leagueMemberId }) => {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="bg-black border border-zinc-800 rounded p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest">Tradable Stocks</p>
+            <p className="text-xs font-mono text-zinc-700 mt-1">
+              You can buy stocks after they appear here from the draft or Add/Drop tab.
+            </p>
+          </div>
+          <button
+            onClick={fetchTradableStocks}
+            className="border border-zinc-700 text-zinc-500 hover:border-emerald-500 hover:text-emerald-400 font-mono text-xs px-3 py-1 rounded tracking-widest transition-all duration-200"
+          >
+            REFRESH
+          </button>
+        </div>
+
+        {tradableLoading ? (
+          <p className="text-zinc-600 font-mono text-xs">LOADING TRADABLE LIST...</p>
+        ) : tradableStocks.length === 0 ? (
+          <p className="text-zinc-700 font-mono text-xs">
+            NO_TRADABLE_STOCKS — open Add/Drop to add a ticker, or wait for your draft turn.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {tradableStocks.map((ticker) => (
+              <button
+                key={ticker}
+                onClick={() => setSymbol(ticker)}
+                className="border border-emerald-900/70 bg-emerald-950/20 text-emerald-400 hover:border-white hover:text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.35)] font-mono text-xs px-3 py-1.5 rounded tracking-widest transition-all duration-200"
+              >
+                {ticker}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Order config */}

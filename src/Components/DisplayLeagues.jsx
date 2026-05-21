@@ -3,37 +3,25 @@ import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
 const DisplayLeagues = ({ userId, refreshKey }) => {
-  const [count, setCount] = useState(null);
   const [error, setError] = useState(null);
   const [leagues, setLeagues] = useState([]);
-  const [index, setIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const { data, count, error: countError } = await supabase
+        const { data, error: countError } = await supabase
           .from('league_members')
           .select('league_id, leagues(name)', { count: 'exact' })
           .eq('user_id', userId);
-        setCount(count);
         setError(countError);
         setLeagues(data || []);
-        setIndex(0);
       } catch (err) {
         setError(err);
       }
     };
     fetchCount();
   }, [userId, refreshKey]);
-
-  const nextInd = () => {
-    if (leagues.length > 0) setIndex((index + 1) % count);
-  };
-
-  const goToLeague = () => {
-    if (leagues.length > 0) navigate(`/league/${leagues[index]?.league_id}`);
-  };
 
   if (leagues.length === 0 && !error) {
     return (
@@ -51,29 +39,20 @@ const DisplayLeagues = ({ userId, refreshKey }) => {
       )}
 
       {leagues.length > 0 && (
-        <>
-          <div className="bg-black border border-zinc-800 rounded p-4 hover:border-emerald-500/30 transition-colors">
-            <p className="text-xs font-mono text-zinc-600 mb-1">ACTIVE LEAGUE</p>
+        <div className="max-h-80 overflow-y-auto pr-1 space-y-2">
+          {leagues.map((league, index) => (
             <button
-              onClick={goToLeague}
-              className="text-emerald-400 font-mono text-sm hover:text-emerald-300 transition-colors text-left w-full"
+              key={league.league_id}
+              onClick={() => navigate(`/league/${league.league_id}`)}
+              className="w-full bg-black border border-zinc-800 rounded p-4 hover:border-emerald-500/40 hover:bg-emerald-950/10 transition-colors text-left"
             >
-              {leagues[index]?.leagues?.name?.toUpperCase() || 'UNNAMED_LEAGUE'} →
+              <p className="text-xs font-mono text-zinc-600 mb-1">LEAGUE {String(index + 1).padStart(2, "0")}</p>
+              <span className="text-emerald-400 font-mono text-sm">
+                {league.leagues?.name?.toUpperCase() || 'UNNAMED_LEAGUE'} →
+              </span>
             </button>
-            <p className="text-xs font-mono text-zinc-700 mt-1">
-              {index + 1} / {count}
-            </p>
-          </div>
-
-          {count > 1 && (
-            <button
-              onClick={nextInd}
-              className="w-full border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300 font-mono text-xs py-2 rounded tracking-widest transition-all duration-200"
-            >
-              NEXT LEAGUE ↓
-            </button>
-          )}
-        </>
+          ))}
+        </div>
       )}
     </div>
   );

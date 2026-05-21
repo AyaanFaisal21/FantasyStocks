@@ -6,6 +6,8 @@ import { LeagueCreation } from './LeagueCreation';
 import JoinLeague from './JoinLeague.jsx';
 import DisplayLeagues from './DisplayLeagues.jsx';
 import Card from './Card.jsx';
+import AppShell from './AppShell.jsx';
+import MarketStatus from './MarketStatus.jsx';
 
 const Dashboard = () => {
   const { session, signOut } = UserAuth();
@@ -47,13 +49,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="scanlines min-h-screen bg-black text-slate-300">
-      {/* Top nav bar */}
-      <div className="border-b border-zinc-900 bg-zinc-950 px-6 py-3 flex items-center justify-between">
-        <span className="font-mono font-black text-white tracking-tight text-lg">
-          FANTASY<span className="text-emerald-400">STOCKS</span>
-        </span>
-        <div className="flex items-center gap-6">
+    <AppShell
+      headerRight={
+        <>
           <span className="text-xs font-mono text-zinc-500 hidden sm:block">
             {session?.user?.email}
           </span>
@@ -63,8 +61,9 @@ const Dashboard = () => {
           >
             SIGN_OUT
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       <div className="max-w-5xl mx-auto px-4 py-10">
         {/* Welcome header */}
@@ -89,10 +88,7 @@ const Dashboard = () => {
 
         {/* Status bar */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 rounded px-4 py-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-green" />
-            <span className="text-xs font-mono text-zinc-400">MARKETS OPEN</span>
-          </div>
+          <MarketStatus />
           <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 rounded px-4 py-2">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
             <span className="text-xs font-mono text-zinc-400">SESSION ACTIVE</span>
@@ -112,7 +108,7 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 };
 

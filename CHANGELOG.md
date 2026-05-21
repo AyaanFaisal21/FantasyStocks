@@ -20,6 +20,14 @@
 - Replaced the default Vite browser identity with Fantasy Stocks metadata, a custom SVG favicon, theme color, Open Graph/Twitter summary tags, and a web app manifest.
 - Added a visible deployment configuration fallback when required frontend Supabase environment variables are missing, preventing blank-page startup failures.
 - Added Vercel SPA rewrites so browser-routed paths resolve to `index.html` in production.
+- Updated Buy/Sell segmented controls so active options keep the dark terminal surface while the label, border, and inset treatment glow white.
+- Added a Tradable Stocks panel to the Buy/Sell tab so users can see which tickers they are currently allowed to buy and click one to populate the order instrument.
+- Replaced the raw `league_member_id` label in the Portfolio tab with a cleaner league name and user display name label.
+- Added a shared authenticated app header with a moving API-backed market ticker to dashboard, league, and profile setup pages.
+- Moved the API-backed market ticker out of the header into a fixed authenticated footer, with a randomized page-load ticker subset and duplicated ticker groups for a cleaner loop.
+- Added a shared authenticated app shell with a passive animated candlestick background behind post-landing pages.
+- Changed dashboard league browsing from a single button-cycled league card to a vertically scrollable list of all user leagues.
+- Replaced the static dashboard market-open badge with an Eastern Time market-hours indicator.
 
 ### Backend
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 
 const pnlColor = (v) =>
@@ -37,14 +37,14 @@ function Sparkline({ values, color = "#10b981", height = 36 }) {
   );
 }
 
-const Portfolio = ({ leagueMemberId }) => {
+const Portfolio = ({ leagueMemberId, leagueName, displayName }) => {
   const [weekStartAmt, setWeekStartAmt] = useState(null);
   const [currentBalance, setCurrentBalance] = useState(null);
   const [holdings, setHoldings] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchPortfolioInfo = async () => {
+  const fetchPortfolioInfo = useCallback(async () => {
     const { data: portfolio, error } = await supabase
       .from("portfolios").select("*").eq("league_member_id", leagueMemberId).single();
     if (error) {
@@ -54,24 +54,24 @@ const Portfolio = ({ leagueMemberId }) => {
       setWeekStartAmt(portfolio.start_of_week_total);
       setCurrentBalance(portfolio.current_balance);
     }
-  };
+  }, [leagueMemberId]);
 
-  const fetchHoldingsInfo = async () => {
+  const fetchHoldingsInfo = useCallback(async () => {
     const { data, error } = await supabase
       .from("holdings").select("*").eq("league_member_id", leagueMemberId);
     if (error) setError(error);
     else setHoldings(data || []);
-  };
+  }, [leagueMemberId]);
 
-  const fetchStockInfo = async () => {
+  const fetchStockInfo = useCallback(async () => {
     setError(null);
     setLoading(true);
     try { await Promise.all([fetchPortfolioInfo(), fetchHoldingsInfo()]); }
-    catch (err) { setError("Something went wrong"); }
+    catch { setError("Something went wrong"); }
     setLoading(false);
-  };
+  }, [fetchPortfolioInfo, fetchHoldingsInfo]);
 
-  useEffect(() => { fetchStockInfo(); }, [leagueMemberId]);
+  useEffect(() => { fetchStockInfo(); }, [fetchStockInfo]);
 
   const pnl = typeof currentBalance === "number" && typeof weekStartAmt === "number"
     ? currentBalance - weekStartAmt : null;
@@ -96,7 +96,9 @@ const Portfolio = ({ leagueMemberId }) => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-mono text-zinc-600 tracking-widest uppercase">// Portfolio</p>
-          <p className="text-zinc-500 font-mono text-xs mt-0.5">league_member_id: {leagueMemberId ?? "—"}</p>
+          <p className="text-zinc-500 font-mono text-xs mt-0.5">
+            {(leagueName || "League").toUpperCase()} / {(displayName || "Trader").toUpperCase()}
+          </p>
         </div>
         <button
           onClick={fetchStockInfo}
