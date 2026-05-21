@@ -17,6 +17,9 @@
 ### Frontend
 
 - Added a fourth "How it works" card explaining league-winning rules: weekly matchup wins award 1 point, and the best start-to-finish portfolio earns an end-of-season bonus worth total individual matchup count divided by 3.
+- Replaced the default Vite browser identity with Fantasy Stocks metadata, a custom SVG favicon, theme color, Open Graph/Twitter summary tags, and a web app manifest.
+- Added a visible deployment configuration fallback when required frontend Supabase environment variables are missing, preventing blank-page startup failures.
+- Added Vercel SPA rewrites so browser-routed paths resolve to `index.html` in production.
 
 ### Backend
 

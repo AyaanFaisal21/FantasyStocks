@@ -4,13 +4,17 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from './router'
 import './index.css'
 import { AuthContextProvider } from './context/AuthContext'
+import { hasSupabaseConfig, missingSupabaseConfig } from './supabaseClient'
+import DeploymentConfigError from './Components/DeploymentConfigError'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <>
-    <AuthContextProvider>
-      <RouterProvider router={router} />
-    </AuthContextProvider>
-    </>
+    {hasSupabaseConfig ? (
+      <AuthContextProvider>
+        <RouterProvider router={router} />
+      </AuthContextProvider>
+    ) : (
+      <DeploymentConfigError missingKeys={missingSupabaseConfig} />
+    )}
   </StrictMode>,
 )

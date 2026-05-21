@@ -1,5 +1,5 @@
-import { createContext, useEffect, useState, useContext, use } from "react";
-import {supabase } from "../supabaseClient";
+import { createContext, useEffect, useState, useContext } from "react";
+import { hasSupabaseConfig, supabase } from "../supabaseClient";
 
 const AuthContext = createContext()
 
@@ -40,6 +40,11 @@ export const AuthContextProvider = ({children}) => {
     };
 
     useEffect(() => {
+        if (!hasSupabaseConfig) {
+            setSession(null);
+            return;
+        }
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
         });

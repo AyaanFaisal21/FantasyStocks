@@ -1,0 +1,17 @@
+{
+  "name": "Fantasy Stocks",
+  "short_name": "FantasyStocks",
+  "description": "Draft stocks, trade simulated portfolios, and compete in weekly fantasy market matchups.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050508",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
