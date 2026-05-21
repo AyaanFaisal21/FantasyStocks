@@ -64,6 +64,7 @@ jobs:
       - name: Test backend
         working-directory: backend
         env:
+          PYTHONPATH: "."
           TIME_CHUNK_SIZE: "30"
         run: pytest -q
 
