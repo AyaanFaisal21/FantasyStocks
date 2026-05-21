@@ -24,7 +24,7 @@ const StockLookup = () => {
         }
 
         console.log(data);
-    } catch (err) { 
+    } catch {
         setError("Failed to fetch stock price");
     }
 }

@@ -49,7 +49,6 @@ export const generateMatchups = async (leagueId, setStatus, setLoading) => {
       }
 
       // Rotate members clockwise for next round (except the first member)
-      const fixed = paddedMembers[0];
       const rest = paddedMembers.slice(1);
       rest.unshift(rest.pop());
       paddedMembers.splice(1, paddedMembers.length - 1, ...rest);

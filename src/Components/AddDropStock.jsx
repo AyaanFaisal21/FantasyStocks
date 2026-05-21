@@ -7,7 +7,6 @@ import { UserDisplayWrapper } from "./ActiveUsers.jsx";
 import MakeAddDropAction from "./MakeAddDropAction.jsx";
 
 const DefaultMessage = ({ leagueId, setDraftState }) => {
-  const [error, setError] = useState("");
   const { activeMap, draftState } = useDraftContext();
 
   useEffect(() => {
@@ -38,7 +37,6 @@ const DefaultMessage = ({ leagueId, setDraftState }) => {
         >
           Start Draft
         </button>
-        {error && <p className="text-red-400 font-mono text-xs">ERR: {error}</p>}
       </div>
     </UserDisplayWrapper>
   );
@@ -76,6 +74,8 @@ const AddDropStock = ({ leagueId, userId, leagueMemberId, members }) => {
       {draftState === DraftState.COMPLETED && (
         <MakeAddDropAction leagueId={leagueId} leagueMemberId={leagueMemberId} />
       )}
+
+      {error && <p className="text-red-400 font-mono text-xs">ERR: {error.message || String(error)}</p>}
 
       {/* Dev utility */}
       <div className="pt-4 border-t border-zinc-900">

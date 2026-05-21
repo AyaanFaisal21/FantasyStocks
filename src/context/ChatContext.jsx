@@ -76,7 +76,11 @@ export function ChatContextProvider({leagueId, userId, members, children}) {
 
         return () => {
             ws.removeEventListener("message", onMessage);
-            try { ws.close(); } catch {}
+            try {
+                ws.close();
+            } catch (error) {
+                console.warn("Failed to close chat websocket", error);
+            }
             wsRef.current = null;
         };
 

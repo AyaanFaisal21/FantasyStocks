@@ -14,7 +14,7 @@ load_backend_env()
 
 API_KEY = os.getenv("ALPACA_API_KEY")
 API_SECRET = os.getenv("ALPACA_API_SECRET")
-TIME_CHUNK_SIZE = int(os.getenv("TIME_CHUNK_SIZE"))
+TIME_CHUNK_SIZE = int(os.getenv("TIME_CHUNK_SIZE", "30"))
 
 """
 Given a DataFrame with potential gaps in timestamps, returns a dataframe containing only values from time chunk points. 

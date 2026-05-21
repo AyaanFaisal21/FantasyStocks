@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import { supabase } from "../supabaseClient";
-import { DraftState } from "../constants/draftState";
+import { useState, useEffect } from "react";
 import { useDraftContext } from "../context/DraftContext";
 import { UserDisplayWrapper } from "./ActiveUsers";
 

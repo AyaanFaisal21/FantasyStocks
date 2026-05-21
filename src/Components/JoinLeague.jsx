@@ -23,6 +23,7 @@ const JoinLeague = ({ userId, onEdit }) => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('league_id', leagueId[0].league_id);
+      if (countError) throw countError;
       if (count > 0) throw new Error("You are already a member of this league.");
 
       const { count: memberCount } = await supabase
@@ -34,7 +35,7 @@ const JoinLeague = ({ userId, onEdit }) => {
       if (leagueError) throw leagueError;
       if (!leagueId || leagueId.length === 0) throw new Error("League not found.");
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('league_members')
         .insert([{ user_id: userId, league_id: leagueId[0].league_id }]);
       if (error) throw error;

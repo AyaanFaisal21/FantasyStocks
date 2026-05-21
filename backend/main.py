@@ -1,24 +1,33 @@
-from fastapi import FastAPI, HTTPException, WebSocket
-from fastapi.middleware.cors import CORSMiddleware
+import os
+import traceback
 from datetime import datetime, timezone as tz
 from typing import Optional
-from datetime import datetime
+
+from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 
 from stocks import fetch_price
 from MatchupCalc import run_weekly_matchups
 from stockManagement import Stock, add_stock, remove_stock
-import traceback
 from database import get_client
 from draft import router as draft_router
 from chat import router as chat_router
 
-app = FastAPI()
+def get_cors_origins() -> list[str]:
+    origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    return [origin.strip() for origin in origins.split(",") if origin.strip()]
+
+app = FastAPI(
+    title="FantasyStocks API",
+    version="1.0.0",
+    description="Backend API for fantasy stock leagues, drafts, chat, and matchup automation.",
+)
 app.include_router(draft_router)
 app.include_router(chat_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # set this to "*" if not working to allow all. BUT we should block this in prod
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,6 +36,14 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"message": "Stock price API is running."}
+
+@app.get("/health", tags=["ops"])
+def health_check():
+    return {
+        "status": "ok",
+        "service": "fantasystocks-api",
+        "timestamp": datetime.now(tz.utc).isoformat(),
+    }
 
 @app.get("/price")
 def get_stock_price(ticker: str, ts: Optional[str] = None):

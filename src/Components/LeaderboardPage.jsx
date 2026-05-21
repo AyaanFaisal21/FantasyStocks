@@ -98,7 +98,6 @@ const LeaderboardPage = ({ leagueId }) => {
   );
 
   const top3 = stats.slice(0, 3);
-  const rest = stats.slice(3);
 
   return (
     <div className="p-6 space-y-5">
