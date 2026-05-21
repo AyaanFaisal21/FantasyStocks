@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { UserAuth } from "../context/AuthContext";
@@ -9,10 +9,9 @@ import AddDropStock from "./AddDropStock";
 import LeaderboardPage from "./LeaderboardPage";
 import ChatWindow from "./ChatWindow";
 import { generateMatchups } from "./matchups";
-import Card from "./Card.jsx";
 import MatchupPage from "./matchupPage";
 
-const tabs = ["Matchup", "Buy/Sell Stock", "Portfolio", "View Leaderboard", "Add/Drop Stock", "Chat Window"];
+const tabs = ["Matchup", "Buy/Sell", "Portfolio", "Leaderboard", "Add/Drop", "Chat"];
 
 const LeaguePage = () => {
   const { leagueId } = useParams();
@@ -32,10 +31,6 @@ const LeaguePage = () => {
 
   const userId = session?.user?.id;
 
-  const handleBackToDashboard = () => {
-    navigate("/dashboard");
-  };
-
   useEffect(() => {
     const fetchLeagueData = async () => {
       const { data, error } = await supabase
@@ -43,14 +38,8 @@ const LeaguePage = () => {
         .select("name, league_code")
         .eq("league_id", leagueId)
         .single();
-
-      if (data) {
-        setLeagueName(data.name);
-        setLeagueCode(data.league_code);
-      }
-      if (error) {
-        console.error("Error fetching league data:", error);
-      }
+      if (data) { setLeagueName(data.name); setLeagueCode(data.league_code); }
+      if (error) console.error("Error fetching league data:", error);
     };
 
     const fetchLeagueMembers = async () => {
@@ -58,13 +47,8 @@ const LeaguePage = () => {
         .from("league_members")
         .select("user_id, display_name")
         .eq("league_id", leagueId);
-
-      if (error) {
-        console.error("Error fetching league members:", error);
-        setError("Could not fetch members.");
-      } else {
-        setMembers(data);
-      }
+      if (error) { setError("Could not fetch members."); }
+      else setMembers(data);
     };
 
     fetchLeagueData();
@@ -80,39 +64,28 @@ const LeaguePage = () => {
         .eq("user_id", userId)
         .eq("league_id", leagueId)
         .single();
-
-      if (error) {
-        console.error("Error fetching league member id:", error);
-        setError("Could not fetch league member id.");
-        return null;
-      }
-
+      if (error) { setError("Could not fetch league member id."); return; }
       setLeagueMemberId(data.league_member_id);
     };
-
     fetchLeagueMemberId();
   }, [userId, leagueId]);
 
   const handleDisplayNameChange = async (e) => {
     e.preventDefault();
     setUpdateMessage("");
-
     const { error } = await supabase
       .from("league_members")
       .update({ display_name: newLeagueDisplayName })
       .eq("league_id", leagueId)
       .eq("user_id", userId);
-
     if (error) {
       setUpdateMessage("Failed to update display name.");
     } else {
-      setUpdateMessage("Display name updated!");
+      setUpdateMessage("Display name updated.");
       setNewLeagueDisplayName("");
-      const { data, error: fetchError } = await supabase
-        .from("league_members")
-        .select("user_id, display_name")
-        .eq("league_id", leagueId);
-      if (!fetchError) setMembers(data);
+      const { data } = await supabase
+        .from("league_members").select("user_id, display_name").eq("league_id", leagueId);
+      if (data) setMembers(data);
     }
   };
 
@@ -134,113 +107,132 @@ const LeaguePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-950 text-white p-6 pt-24">
-      <div className="max-w-6xl mx-auto">
+    <div className="scanlines min-h-screen bg-black text-slate-300">
+      {/* Nav */}
+      <div className="border-b border-zinc-900 bg-zinc-950 px-6 py-3 flex items-center justify-between">
+        <span className="font-mono font-black text-white tracking-tight">
+          FANTASY<span className="text-emerald-400">STOCKS</span>
+        </span>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="border border-zinc-700 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 font-mono text-xs px-4 py-1.5 rounded tracking-widest transition-all duration-200"
+        >
+          ← DASHBOARD
+        </button>
+      </div>
 
-        <h1 className="text-4xl font-bold text-center mb-2">🏆 {leagueName}</h1>
-        <p className="text-center text-gray-400 mb-8">League Code: {leagueCode}</p>
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        {/* League header */}
+        <div>
+          <p className="text-xs font-mono text-zinc-600 tracking-widest uppercase mb-1">// LEAGUE</p>
+          <h1 className="text-2xl font-mono font-bold text-white uppercase">
+            {leagueName || '...'}
+          </h1>
+          <div className="flex items-center gap-3 mt-2">
+            <span className="text-xs font-mono text-zinc-600">INVITE CODE:</span>
+            <span className="text-xs font-mono text-emerald-400 bg-emerald-950/30 border border-emerald-900/50 rounded px-2 py-0.5 tracking-widest">
+              {leagueCode || '———'}
+            </span>
+          </div>
+        </div>
 
-        {/* Side-by-side Member List and Display Name Form */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-10">
+        {error && <p className="text-red-400 text-xs font-mono">ERR: {error}</p>}
 
-          {/* League Members List Card */}
-          <div className="bg-gray-900 rounded-2xl p-6 w-full lg:w-1/2 shadow border border-gray-800">
-            <h2 className="text-2xl font-semibold mb-4">League Members</h2>
-            {error && <p className="text-red-500">{error}</p>}
-            <ul className="space-y-2">
-              {members.length === 0 ? (
-                <p className="text-gray-400">No members in this league.</p>
-              ) : (
-                members.map((member) => (
-                  <li key={member.user_id} className="text-gray-300">
-                    {member.display_name || member.user_id}
+        {/* Info row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Members */}
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-5 accent-top relative">
+            <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase mb-3">Roster</p>
+            {members.length === 0 ? (
+              <p className="text-zinc-700 font-mono text-xs">NO_MEMBERS</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {members.map((member, i) => (
+                  <li key={member.user_id} className="flex items-center gap-2 font-mono text-sm">
+                    <span className="text-zinc-700 text-xs">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="text-slate-300">{member.display_name || member.user_id}</span>
                   </li>
-                ))
-              )}
-            </ul>
+                ))}
+              </ul>
+            )}
           </div>
 
-          {/* Display Name Update Form */}
-          <div className="bg-gray-900 rounded-2xl p-6 w-full lg:w-1/2 shadow border border-gray-800">
-            <h3 className="text-2xl font-semibold mb-4">Change League Display Name</h3>
-            <form onSubmit={handleDisplayNameChange} className="space-y-4">
-              <input
-                type="text"
-                placeholder="New Display Name"
-                value={newLeagueDisplayName}
-                onChange={(e) => setNewLeagueDisplayName(e.target.value)}
-                className="w-full px-4 py-2 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                required
-              />
+          {/* Display name + matchup controls */}
+          <div className="space-y-4">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-5">
+              <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase mb-3">League Display Name</p>
+              <form onSubmit={handleDisplayNameChange} className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="New display name..."
+                  value={newLeagueDisplayName}
+                  onChange={(e) => setNewLeagueDisplayName(e.target.value)}
+                  className="w-full bg-black border border-zinc-800 focus:border-emerald-500 text-emerald-400 font-mono px-3 py-2 rounded text-sm outline-none transition-colors placeholder:text-zinc-700"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="w-full border border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-black font-mono text-xs py-2 rounded tracking-widest uppercase transition-all duration-200"
+                >
+                  Update
+                </button>
+                {updateMessage && (
+                  <p className={`text-xs font-mono ${updateMessage.includes('Failed') ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {updateMessage}
+                  </p>
+                )}
+              </form>
+            </div>
+
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-5">
+              <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase mb-3">Matchup Controls</p>
               <button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition w-full"
+                onClick={() => { handleGenerateMatchups(); calculateMatchups(); }}
+                disabled={matchupLoading}
+                className="w-full border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black font-mono text-xs py-2 rounded tracking-widest uppercase transition-all duration-200 disabled:opacity-40"
               >
-                Update Display Name
+                {matchupLoading ? 'GENERATING...' : 'GENERATE MATCHUPS'}
               </button>
-              {updateMessage && (
-                <p className="text-sm text-blue-400">{updateMessage}</p>
+              {matchupStatus && (
+                <p className="mt-2 text-xs font-mono text-zinc-500">{matchupStatus}</p>
               )}
-            </form>
+            </div>
           </div>
         </div>
 
-        {/* Matchup Button */}
-        <div className="text-center mb-10">
-          <button
-            onClick={() => {
-              handleGenerateMatchups();
-              calculateMatchups();
-            }}
-            disabled={matchupLoading}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded disabled:opacity-50 transition"
-          >
-            {matchupLoading ? "Generating Matchups..." : "Generate Matchups"}
-          </button>
-          {matchupStatus && (
-            <p className="mt-2 text-sm text-gray-400">{matchupStatus}</p>
-          )}
-        </div>
-
-        <Card title="League Management">
-          <div className="flex flex-wrap border-b border-gray-700 mb-4">
+        {/* Tab panel */}
+        <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden accent-top relative">
+          {/* Tab bar */}
+          <div className="flex border-b border-zinc-800 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 px-4 py-2 text-sm font-medium transition ${activeTab === tab
-                    ? "bg-gray-800 text-white border-b-2 border-purple-500"
-                    : "text-gray-400 hover:text-white"
-                  }`}
+                className={`flex-shrink-0 px-5 py-3 text-xs font-mono tracking-widest uppercase transition-all duration-200 border-b-2 ${
+                  activeTab === tab
+                    ? 'border-emerald-500 text-emerald-400 bg-emerald-950/20'
+                    : 'border-transparent text-zinc-600 hover:text-zinc-400'
+                }`}
               >
                 {tab}
               </button>
             ))}
           </div>
 
-          <div className="mt-4">
+          <div className="p-0">
             {activeTab === tabs[0] && <MatchupPage leagueId={leagueId} />}
-            {activeTab == tabs[1] && <BuySellStock leagueMemberId={leagueMemberId} />}
-            {activeTab == tabs[2] && <Portfolio leagueMemberId={leagueMemberId} />}
-            {activeTab == tabs[3] && <LeaderboardPage leagueId={leagueId} />}
+            {activeTab === tabs[1] && <BuySellStock leagueMemberId={leagueMemberId} />}
+            {activeTab === tabs[2] && <Portfolio leagueMemberId={leagueMemberId} />}
+            {activeTab === tabs[3] && <LeaderboardPage leagueId={leagueId} />}
             {activeTab === tabs[4] && (
-              <AddDropStock leagueId={leagueId} userId={userId} leagueMemberId={leagueMemberId} members = {members}/>
+              <AddDropStock leagueId={leagueId} userId={userId} leagueMemberId={leagueMemberId} members={members} />
             )}
-            {activeTab === tabs[5] &&
+            {activeTab === tabs[5] && (
               <ChatContextProvider leagueId={leagueId} userId={userId} members={members}>
                 <ChatWindow />
               </ChatContextProvider>
-            }
+            )}
           </div>
-        </Card>
-
-        <div className="text-center mt-10">
-          <button
-            onClick={handleBackToDashboard}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded"
-          >
-            Back to Dashboard
-          </button>
         </div>
       </div>
     </div>

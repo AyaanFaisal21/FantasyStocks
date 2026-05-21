@@ -83,41 +83,44 @@ const MakeAddDropAction = ({leagueId, leagueMemberId, callBack = null}) => {
   };
 
   return (
-    <div style={{margin: "auto", padding: "20px" }}>
-      <h2>Manage Your Tradable Stocks</h2>
+    <div className="space-y-4">
+      <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase">Tradable Stocks</p>
 
-      {/* Add stock form */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+      <div className="flex gap-2">
         <input
           type="text"
           value={ticker}
-          onChange={(e) => setTicker(e.target.value)}
-          placeholder="Enter ticker (e.g. AAPL)"
-          style={{ flex: 1 }}
+          onChange={(e) => setTicker(e.target.value.toUpperCase())}
+          placeholder="AAPL"
+          className="flex-1 bg-black border border-zinc-800 focus:border-emerald-500 text-emerald-400 font-mono px-3 py-2 rounded text-sm outline-none transition-colors placeholder:text-zinc-700"
         />
-        <button onClick={() => handleAddStock(ticker)}>Add</button>
+        <button
+          onClick={() => handleAddStock(ticker)}
+          className="border border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-black font-mono text-xs px-4 py-2 rounded tracking-widest uppercase transition-all duration-200"
+        >
+          ADD
+        </button>
       </div>
 
-      {/* Stock list */}
-      <h3>Your Stocks</h3>
+      {loading && <p className="text-zinc-600 font-mono text-xs">LOADING...</p>}
 
-      {loading && 
-        <p className="text-yellow-300">Loading stocks!</p>
-      }
-
-      {userStocks.length === 0 && !loading? (
-        <p>No stocks yet. Add one above!</p>
+      {userStocks.length === 0 && !loading ? (
+        <p className="text-zinc-700 font-mono text-xs">NO_STOCKS — add tickers above.</p>
       ) : (
-        <ul>
+        <div className="space-y-1.5">
           {userStocks.map((stock) => (
-            <li key={stock} style={{ display: "flex", justifyContent: "space-between" }}>
-              {stock}
-              <button onClick={() => removeStock(stock)} disabled={loading}>
-                Remove
+            <div key={stock} className="flex items-center justify-between bg-black border border-zinc-800 rounded px-4 py-2.5">
+              <span className="font-mono text-emerald-400 text-sm font-bold">{stock}</span>
+              <button
+                onClick={() => removeStock(stock)}
+                disabled={loading}
+                className="border border-zinc-700 text-zinc-500 hover:border-red-500 hover:text-red-400 font-mono text-xs px-3 py-1 rounded tracking-widest uppercase transition-all duration-200 disabled:opacity-40"
+              >
+                REMOVE
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

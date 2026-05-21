@@ -4,17 +4,17 @@ import Signup from "./Components/Signup";
 import Signin from "./Components/Signin";
 import Dashboard from "./Components/Dashboard";
 import PrivateRoute from "./Components/PrivateRoute";
-import CreateProfile from "./Components/CreateProfile"; 
-import App from "./App";
+import CreateProfile from "./Components/CreateProfile";
+import Landing from "./Components/Landing";
 import LeaguePage from "./Components/LeaguePage";
-import LeaderboardPage from "./Components/LeaderboardPage"; 
+import LeaderboardPage from "./Components/LeaderboardPage";
 import AddDropStock from "./Components/AddDropStock";
 import MatchupPage from "./Components/matchupPage";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: <App />,
+        element: <Landing />,
     },
     {
         path: "/signup",

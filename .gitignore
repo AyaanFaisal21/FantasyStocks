@@ -30,3 +30,4 @@ backend/__pycache__
 # Secrets! 
 .env
 backend/.env
+backend/.env.back

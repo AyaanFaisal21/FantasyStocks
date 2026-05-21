@@ -6,11 +6,13 @@ import { UserDisplayWrapper } from "./ActiveUsers";
 
 import MakeAddDropAction from "./MakeAddDropAction";
 
-const ActionWrapper = ({leagueId, leagueMemberId, callBack = null}) => { 
-    return (
-        <div className="border-2 border-white m-3"><MakeAddDropAction leagueId={leagueId} leagueMemberId={leagueMemberId} callBack={callBack}/></div>
-    );
-}
+const ActionWrapper = ({ leagueId, leagueMemberId, callBack = null }) => {
+  return (
+    <div className="border border-emerald-500/30 rounded-lg p-4 mt-4">
+      <MakeAddDropAction leagueId={leagueId} leagueMemberId={leagueMemberId} callBack={callBack} />
+    </div>
+  );
+};
 
 const Timer = ({ deadline }) => {
   const [remaining, setRemaining] = useState(() => deadline - Date.now());
@@ -42,28 +44,41 @@ export default function Draft({leagueId, leagueMemberId, setDraftState}) {
         }
     }, [draftState])
 
-    const getUserColor = (user_id) => { 
-        if (currentTurnUser && user_id === currentTurnUser && activeMap.get(String(user_id))) { 
-            return "text-blue-600";
-        }
-        if (activeMap.get(String(user_id))) { 
-            return "text-white";
-        }
-        return "text-gray-700";
-    }
+    const getUserColor = (user_id) => {
+      if (currentTurnUser && user_id === currentTurnUser && activeMap.get(String(user_id)))
+        return "text-cyan-400";
+      if (activeMap.get(String(user_id))) return "text-emerald-400";
+      return "text-zinc-700";
+    };
 
     return (
-        <UserDisplayWrapper contextCallback={useDraftContext} getUserColor={getUserColor}> 
-            <p className="text-2xl text-fuchsia-500 mb-2" >We are currently in a draft!!!</p>
-            {roundNum && deadline && <p> It is round number {roundNum}. The timer is: <Timer deadline={Date.parse(deadline)} /> </p>}
+      <UserDisplayWrapper contextCallback={useDraftContext} getUserColor={getUserColor}>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 pulse-green" />
+            <p className="text-cyan-400 font-mono text-sm font-bold tracking-widest uppercase">DRAFT IN PROGRESS</p>
+          </div>
 
-            {userId !== currentTurnUser && <p>Please wait for your turn!</p>}
+          {roundNum && deadline && (
+            <div className="flex items-center gap-4 font-mono text-sm">
+              <span className="text-zinc-500">ROUND</span>
+              <span className="text-white font-bold">{roundNum}</span>
+              <span className="text-zinc-500 ml-4">TIME</span>
+              <span className="text-red-400 font-bold tabular-nums">
+                <Timer deadline={Date.parse(deadline)} />
+              </span>
+            </div>
+          )}
 
-            {userId === currentTurnUser && 
+          {userId !== currentTurnUser ? (
+            <p className="text-zinc-500 font-mono text-xs">Waiting for current player to pick...</p>
+          ) : (
             <>
-                <p>It is your turn!</p>
-                <ActionWrapper leagueId={leagueId} leagueMemberId={leagueMemberId} callBack={notifyDraftPick}/>
-            </>}
-        </UserDisplayWrapper>
+              <p className="text-emerald-400 font-mono text-sm font-bold">YOUR TURN — make your pick!</p>
+              <ActionWrapper leagueId={leagueId} leagueMemberId={leagueMemberId} callBack={notifyDraftPick} />
+            </>
+          )}
+        </div>
+      </UserDisplayWrapper>
     );
 }

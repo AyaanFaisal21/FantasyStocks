@@ -1,10 +1,10 @@
 from supabase import create_client, Client, acreate_client, AsyncClient
 import pandas as pd
 
-from dotenv import load_dotenv
 import os
+from config import load_backend_env
 
-load_dotenv()
+load_backend_env()
 """
 Get a supabase client
 """

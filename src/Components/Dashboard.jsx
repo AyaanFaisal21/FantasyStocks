@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { UserAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
@@ -10,13 +10,12 @@ import Card from './Card.jsx';
 const Dashboard = () => {
   const { session, signOut } = UserAuth();
   const navigate = useNavigate();
-
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const refresh = () => setRefreshKey(prev => (prev + 1) % 2);
+  const refresh = () => setRefreshKey((prev) => (prev + 1) % 2);
 
   useEffect(() => {
     const fetchDisplayName = async () => {
@@ -26,9 +25,7 @@ const Dashboard = () => {
           .select('display_name')
           .eq('id', session.user.id)
           .single();
-
         if (error) {
-          console.error('Error fetching display name:', error.message);
           setError('Failed to load display name.');
         } else {
           setDisplayName(data.display_name);
@@ -36,7 +33,6 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     fetchDisplayName();
   }, [session]);
 
@@ -51,44 +47,69 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-gray-900 via-black to-gray-900 flex justify-center items-start px-4 py-12">
-      <div className="w-full max-w-4xl bg-white/10 backdrop-blur-lg border border-gray-700 shadow-2xl rounded-xl p-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-4xl font-extrabold text-white tracking-wide mb-2">
-            Your Dashboard
-          </h1>
+    <div className="scanlines min-h-screen bg-black text-slate-300">
+      {/* Top nav bar */}
+      <div className="border-b border-zinc-900 bg-zinc-950 px-6 py-3 flex items-center justify-between">
+        <span className="font-mono font-black text-white tracking-tight text-lg">
+          FANTASY<span className="text-emerald-400">STOCKS</span>
+        </span>
+        <div className="flex items-center gap-6">
+          <span className="text-xs font-mono text-zinc-500 hidden sm:block">
+            {session?.user?.email}
+          </span>
+          <button
+            onClick={handleSignOut}
+            className="border border-zinc-700 text-zinc-400 hover:border-red-500 hover:text-red-400 font-mono text-xs px-4 py-1.5 rounded tracking-widest transition-all duration-200"
+          >
+            SIGN_OUT
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 py-10">
+        {/* Welcome header */}
+        <div className="mb-8">
+          <p className="text-xs font-mono text-zinc-600 tracking-widest uppercase mb-1">
+            // DASHBOARD
+          </p>
           {loading ? (
-            <p className="text-gray-300">Loading...</p>
+            <h2 className="text-2xl font-mono text-zinc-500 cursor-blink">LOADING</h2>
           ) : error ? (
-            <p className="text-red-500">{error}</p>
+            <p className="text-red-400 text-sm font-mono">ERR: {error}</p>
           ) : (
-            <h2 className="text-xl text-indigo-300 font-medium">
-              Welcome, {displayName}!
+            <h2 className="text-2xl font-mono font-bold text-white">
+              WELCOME,{' '}
+              <span className="text-emerald-400">{displayName?.toUpperCase() || 'TRADER'}</span>
             </h2>
           )}
-          <p className="text-gray-400 text-sm mt-2">
-            Manage leagues, view standings, and dominate the market.
+          <p className="text-zinc-600 text-xs font-mono mt-1">
+            Manage leagues · Track positions · Dominate the market.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card title="Select League">
+        {/* Status bar */}
+        <div className="flex gap-4 mb-8 flex-wrap">
+          <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 rounded px-4 py-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-green" />
+            <span className="text-xs font-mono text-zinc-400">MARKETS OPEN</span>
+          </div>
+          <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 rounded px-4 py-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span className="text-xs font-mono text-zinc-400">SESSION ACTIVE</span>
+          </div>
+        </div>
+
+        {/* Main panels */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card title="My Leagues">
             <DisplayLeagues userId={session?.user?.id} refreshKey={refreshKey} />
           </Card>
 
-          <Card title="League Creation">
+          <Card title="League Management">
             <LeagueCreation userId={session?.user?.id} onEdit={refresh} />
+            <div className="my-5 border-t border-zinc-800" />
             <JoinLeague userId={session?.user?.id} onEdit={refresh} />
           </Card>
-        </div>
-
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={handleSignOut}
-            className="text-white font-medium border border-indigo-500 hover:bg-indigo-600 hover:border-indigo-600 px-6 py-2 rounded-lg transition duration-300"
-          >
-            Sign Out
-          </button>
         </div>
       </div>
     </div>

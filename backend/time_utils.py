@@ -1,11 +1,11 @@
 #TODO: WHAT ABOUT HOLIDAYS!!!!! Probably retrieve from alpaca and store for every other case. 
 
-from dotenv import load_dotenv
 import os
+from config import load_backend_env
 
 from datetime import datetime, timedelta, timezone as tz
 
-load_dotenv()
+load_backend_env()
 TIME_CHUNK_SIZE = int(os.getenv("TIME_CHUNK_SIZE"))
 
 """

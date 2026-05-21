@@ -2,12 +2,12 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 from datetime import datetime, date
-from dotenv import load_dotenv
 import os
 from datetime import timedelta
+from config import load_backend_env
 
 # Load environment variables early
-load_dotenv()
+load_backend_env()
 
 # Now safely read env vars
 API_KEY = os.getenv("ALPACA_API_KEY")

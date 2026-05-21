@@ -1,8 +1,8 @@
 from time_utils import process_time, get_monday_from_processed
 from database import get_client, retrieve_stock, add_entries
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 import os
+from config import load_backend_env
 
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
@@ -10,7 +10,7 @@ from alpaca.data.timeframe import TimeFrame
 
 import pandas as pd
 
-load_dotenv()
+load_backend_env()
 
 API_KEY = os.getenv("ALPACA_API_KEY")
 API_SECRET = os.getenv("ALPACA_API_SECRET")
@@ -85,4 +85,3 @@ def fetch_price(ticker: str, ts: datetime) -> dict:
     return convert_data_to_iso(data.iloc[-1].to_dict())
 
     
-

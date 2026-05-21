@@ -1,41 +1,33 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useChatContext } from "../context/ChatContext";
+export function ActiveUsers({ contextCallback, getUserColor = null }) {
+  const { members, activeMap } = contextCallback();
 
-export function ActiveUsers({ contextCallback, getUserColor = null }) { 
-    const {members, activeMap} = contextCallback();
+  const defaultGetUserColor = (user_id) =>
+    activeMap.get(String(user_id)) ? 'text-emerald-400' : 'text-zinc-700';
 
-    const defaultGetUserColor = (user_id) => { 
-        if (activeMap.get(String(user_id))) { 
-            return "text-white";
-        }
-        return "text-gray-700";
-    }
+  const colorFunc = getUserColor ?? defaultGetUserColor;
 
-    const colorFunc = getUserColor ?? defaultGetUserColor
-
-    return (
-        <div>
-            <ul className="mt-4 space-y-2">
-                {members.map((member) => (
-                    <li key={member.user_id} className={`${colorFunc(member.user_id)}`}>
-                        {member.display_name || member.user_id}
-                    </li>
-                ))}
-            </ul>
+  return (
+    <div className="space-y-1.5">
+      {members.map((member) => (
+        <div key={member.user_id} className={`flex items-center gap-2 font-mono text-xs ${colorFunc(member.user_id)}`}>
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+            activeMap.get(String(member.user_id)) ? 'bg-emerald-400' : 'bg-zinc-700'
+          }`} />
+          {member.display_name || member.user_id}
         </div>
-    );
+      ))}
+    </div>
+  );
 }
 
-export function UserDisplayWrapper({contextCallback, getUserColor, children}) { 
-    return (
-        <div className="flex">
-            <div className="w-4/5">
-                {children}
-            </div>
-            <div className="w-1/5">
-                <p>Members</p>
-                <ActiveUsers contextCallback={contextCallback} getUserColor={getUserColor}/> 
-            </div>
-        </div>
-    );
+export function UserDisplayWrapper({ contextCallback, getUserColor, children }) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex-1 min-w-0">{children}</div>
+      <div className="w-36 flex-shrink-0 border-l border-zinc-800 pl-4">
+        <p className="text-xs font-mono text-zinc-600 tracking-widest uppercase mb-3">Members</p>
+        <ActiveUsers contextCallback={contextCallback} getUserColor={getUserColor} />
+      </div>
+    </div>
+  );
 }

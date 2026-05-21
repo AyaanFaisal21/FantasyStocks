@@ -1,390 +1,234 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "../../supabaseClient";
-import { UserAuth } from "../../context/AuthContext";
-import Card from "../Card.jsx";
 
-function Button({optionString, handleFunc, toggleValue}) { 
-    return (
-        <button 
-            className={`px-4 py-2 flex-1 ${toggleValue ? "text-green-500" : "text-white"}`}
-            onClick={(e) => handleFunc(e, optionString)}
-        >
-        {optionString.charAt(0).toUpperCase() + optionString.slice(1)}
-        </button>
-    );
-}
+const handleSell = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares, setError }) => {
+  const shares = isShares ? stockAmt : stockAmt / vwap;
+  const totalValue = shares * vwap;
 
-function ButtonGroup({optionOneString, optionTwoString, handleFunc, toggleVariable}) { 
-    return (
-        <div className="flex space-x-2 border">
-            <Button optionString={optionOneString} handleFunc={handleFunc} toggleValue={toggleVariable}/>
-            <Button optionString={optionTwoString} handleFunc={handleFunc} toggleValue={!toggleVariable}/>
-        </div>
-    );
-}
+  const { data: holding, error: holdingErr } = await supabase
+    .from("holdings").select("*").eq("league_member_id", leagueMemberId).eq("ticker", symbol).single();
+  if (holdingErr || !holding) { setError("No shares available to sell"); return; }
 
-const handleSell = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares, supabase, setError}) => {
-    const shares = isShares ? stockAmt : stockAmt / vwap;
-    const totalValue = shares * vwap;
+  const { data: portfolio, error: portfolioErr } = await supabase
+    .from("portfolios").select("*").eq("league_member_id", leagueMemberId).single();
+  if (portfolioErr || !portfolio) { setError("Portfolio not found"); return; }
 
-    const { data: holding, error: holdingErr } = await supabase
-        .from("holdings")
-        .select("*")
-        .eq("league_member_id", leagueMemberId)
-        .eq("ticker", symbol)
-        .single();
+  const { error: updatePortfolioErr } = await supabase
+    .from("portfolios")
+    .update({ current_balance: portfolio.current_balance + totalValue })
+    .eq("league_member_id", leagueMemberId);
+  if (updatePortfolioErr) { setError("Failed to update portfolio balance"); return; }
 
-    if (holdingErr || !holding) {
-        setError("No shares available to sell");
-        return;
-    }
-
-    const { data: portfolio, error: portfolioErr } = await supabase
-        .from("portfolios")
-        .select("*")
-        .eq("league_member_id", leagueMemberId)
-        .single();
-
-    if (portfolioErr || !portfolio) {
-        setError("Portfolio not found");
-        return;
-    }
-
-    const { error: updatePortfolioErr } = await supabase
-        .from("portfolios")
-        .update({
-            current_balance: portfolio.current_balance + totalValue,
-        })
-        .eq("league_member_id", leagueMemberId);
-
-    if (updatePortfolioErr) {
-        setError("Failed to update portfolio balance");
-        return;
-    }
-
-    const remainingShares = holding.stock_amount - shares;
-    const EPSILON = 0.001;
-
-    if (remainingShares < EPSILON) {
-        await supabase
-            .from("holdings")
-            .delete()
-            .eq("league_member_id", leagueMemberId)
-            .eq("ticker", symbol);
-    } else {
-        await supabase
-            .from("holdings")
-            .update({
-                stock_amount: remainingShares,
-            })
-            .eq("league_member_id", leagueMemberId)
-            .eq("ticker", symbol);
-    }
+  const remainingShares = holding.stock_amount - shares;
+  const EPSILON = 0.001;
+  if (remainingShares < EPSILON) {
+    await supabase.from("holdings").delete().eq("league_member_id", leagueMemberId).eq("ticker", symbol);
+  } else {
+    await supabase.from("holdings").update({ stock_amount: remainingShares })
+      .eq("league_member_id", leagueMemberId).eq("ticker", symbol);
+  }
 };
 
 export { handleSell };
 
-const BuySellStock = ({leagueMemberId}) => { 
+const ToggleButton = ({ label, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex-1 py-2 font-mono text-xs tracking-widest uppercase transition-all duration-200 rounded ${
+      active
+        ? label === 'BUY' || label === 'SHARES'
+          ? 'bg-emerald-500 text-black border border-emerald-500'
+          : 'bg-red-500 text-white border border-red-500'
+        : 'border border-zinc-700 text-zinc-500 hover:border-zinc-500'
+    }`}
+  >
+    {label}
+  </button>
+);
 
-    const [symbol, setSymbol] = useState("");
-    const [stockAmt, setStockAmt] = useState("");
-    const [isShares, setIsShares] = useState(true);
-    const [isBuy, setIsBuy] = useState(true);
-    const [error, setError] = useState('');
+const BuySellStock = ({ leagueMemberId }) => {
+  const [symbol, setSymbol] = useState("");
+  const [stockAmt, setStockAmt] = useState("");
+  const [isShares, setIsShares] = useState(true);
+  const [isBuy, setIsBuy] = useState(true);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
+  const [stockError, setStockError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [txSuccess, setTxSuccess] = useState('');
 
-    const [result, setResult] = useState(null);
-    const [stockError, setStockError] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const fetchStockInfo = async (e) => { 
-
-        e.preventDefault();
-
-        setStockError(null);
-        setResult(null);
-        setLoading(true);
-
-        if (!symbol) { 
-            setStockError("Enter a stock ticker to fetch price!");
-            return {error: "Enter a stock ticker to fetch price!"};
-        }
-
-        try { 
-            const res = await fetch(`http://localhost:8000/price?ticker=${symbol}`);
-            const data = await res.json();
-
-            if (!res.ok) { 
-                setStockError(data.detail || "Stock data not found.");
-                return {error : data.detail || "Stock data not found."}
-            } else { 
-                setResult(data);
-                return {result : data}
-            }
-        } catch (err) { 
-            setStockError("Failed to fetch stock price");
-            return {error: "Failed to fetch stock price"}
-        } finally { 
-            setLoading(false);
-        }
+  const fetchStockInfo = async (e) => {
+    e.preventDefault();
+    setStockError(null);
+    setResult(null);
+    setLoading(true);
+    if (!symbol) { setStockError("Enter a stock ticker to fetch price!"); setLoading(false); return { error: true }; }
+    try {
+      const res = await fetch(`http://localhost:8000/price?ticker=${symbol}`);
+      const data = await res.json();
+      if (!res.ok) { setStockError(data.detail || "Stock data not found."); return { error: true }; }
+      else { setResult(data); return { result: data }; }
+    } catch (err) {
+      setStockError("Failed to fetch stock price — is the backend running?");
+      return { error: true };
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const handleBuySell = (e, type) => { 
-        e.preventDefault();
-        setIsBuy(type === "buy");
+  const getOrCreatePortfolio = async (leagueMemberId) => {
+    let { data: portfolio, error } = await supabase
+      .from("portfolios").select("*").eq("league_member_id", leagueMemberId).single();
+    if (error && error.code !== "PGRST116") { setError("Error fetching portfolio"); return null; }
+    if (!portfolio) {
+      const { data: inserted, error: insertErr } = await supabase
+        .from("portfolios")
+        .insert({ league_member_id: leagueMemberId, current_balance: 10000, start_of_week_total: 10000 })
+        .select().single();
+      if (insertErr) { setError("Error creating new portfolio"); return null; }
+      return inserted;
     }
+    return portfolio;
+  };
 
-    const handleSharesDollars = (e, type) => { 
-        e.preventDefault();
-        setIsShares(type === "shares");
+  const checkHasTicker = async ({ leagueMemberId, symbol }) => {
+    try {
+      const res = await fetch(`http://localhost:8000/hasTicker?leagueMemberId=${leagueMemberId}&ticker=${symbol}`);
+      const data = await res.json();
+      return data.has_ticker;
+    } catch (err) { return false; }
+  };
+
+  const handleBuy = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares }) => {
+    const hasTicker = await checkHasTicker({ leagueMemberId, symbol });
+    if (!hasTicker) { setError("You cannot trade this stock"); throw new Error("You cannot trade this stock"); }
+
+    const portfolio = await getOrCreatePortfolio(leagueMemberId);
+    if (!portfolio) return;
+    const shares = isShares ? stockAmt : stockAmt / vwap;
+    const totalCost = shares * vwap;
+    if (portfolio.current_balance < totalCost) { setError("Insufficient balance"); return; }
+
+    const { data: holding, error: holdingErr } = await supabase
+      .from("holdings").select("*").eq("league_member_id", leagueMemberId).eq("ticker", symbol).single();
+
+    if (holding && !holdingErr) {
+      const newAmount = holding.stock_amount + shares;
+      const newUnitCost = (holding.stock_amount * holding.stock_unit_cost + shares * vwap) / newAmount;
+      await supabase.from("holdings")
+        .update({ stock_amount: newAmount, stock_unit_cost: newUnitCost })
+        .eq("league_member_id", leagueMemberId).eq("ticker", symbol);
+    } else {
+      await supabase.from("holdings").insert({
+        league_member_id: leagueMemberId, ticker: symbol, stock_amount: shares, stock_unit_cost: vwap,
+      });
     }
+    await supabase.from("portfolios")
+      .update({ current_balance: portfolio.current_balance - totalCost })
+      .eq("league_member_id", leagueMemberId);
+  };
 
-    const handleSubmit = async (e) => { 
-        setError(null);
+  const handleSubmit = async (e) => {
+    setError(null);
+    setTxSuccess('');
+    e.preventDefault();
+    if (!stockAmt) { setError("Must enter a non-zero stock amount!"); return; }
+    const { result, error } = await fetchStockInfo(e);
+    if (error) { setError("Transaction cancelled — fix stock error first."); return; }
+    const vwap = result.price_data.vwap;
+    const key = { leagueMemberId, symbol, stockAmt, vwap, isShares, setError };
+    if (isBuy) await handleBuy(key);
+    else await handleSell(key);
+    if (!error) setTxSuccess(`${isBuy ? 'BUY' : 'SELL'} order executed for ${symbol}.`);
+  };
 
-        e.preventDefault();
+  return (
+    <div className="p-6 space-y-5">
+      <p className="text-xs font-mono text-zinc-500 tracking-widest uppercase">// Trade Execution</p>
 
-        if (!stockAmt) {
-            setError("Must enter a non-zero stock amount!");
-            return ;  
-        }
+      {/* Ticker row */}
+      <div className="bg-black border border-zinc-800 rounded p-4 space-y-3">
+        <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest">Instrument</p>
+        <div className="flex gap-3 items-start flex-wrap">
+          <input
+            type="text"
+            placeholder="AAPL"
+            className="bg-transparent border border-zinc-700 focus:border-emerald-500 text-emerald-400 font-mono px-3 py-2 rounded text-sm outline-none transition-colors placeholder:text-zinc-700 w-32 uppercase"
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+            onKeyDown={(e) => { if (e.key === "Enter") fetchStockInfo(e); }}
+          />
+          <button
+            onClick={fetchStockInfo}
+            className="border border-zinc-600 text-zinc-400 hover:border-cyan-500 hover:text-cyan-400 font-mono text-xs px-4 py-2 rounded tracking-widest uppercase transition-all duration-200"
+          >
+            QUOTE
+          </button>
 
-        const { result, error } = await fetchStockInfo(e);
+          {loading && <span className="text-zinc-600 font-mono text-xs self-center">FETCHING...</span>}
+          {stockError && !loading && (
+            <span className="text-red-400 font-mono text-xs self-center">ERR: {stockError}</span>
+          )}
+          {result?.price_data && !loading && (
+            <div className="flex gap-4 font-mono text-sm self-center">
+              <span className="text-emerald-400 font-bold">${result.price_data.vwap}</span>
+              <span className="text-zinc-600 text-xs self-center">
+                {new Date(result.price_data.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
 
-        if (error) { 
-            setError("No transaction due to stock error!");
-            return ;
-        }
+      {/* Order config */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-black border border-zinc-800 rounded p-4 space-y-2">
+          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest">Direction</p>
+          <div className="flex gap-2">
+            <ToggleButton label="BUY" active={isBuy} onClick={(e) => { e.preventDefault(); setIsBuy(true); }} />
+            <ToggleButton label="SELL" active={!isBuy} onClick={(e) => { e.preventDefault(); setIsBuy(false); }} />
+          </div>
+        </div>
 
-        const vwap = result.price_data.vwap;
+        <div className="bg-black border border-zinc-800 rounded p-4 space-y-2">
+          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest">Units</p>
+          <div className="flex gap-2">
+            <ToggleButton label="SHARES" active={isShares} onClick={(e) => { e.preventDefault(); setIsShares(true); }} />
+            <ToggleButton label="DOLLARS" active={!isShares} onClick={(e) => { e.preventDefault(); setIsShares(false); }} />
+          </div>
+        </div>
 
-        const key = {
-            leagueMemberId,
-            symbol,
-            stockAmt,
-            vwap,
-            isShares,
-        };
+        <div className="bg-black border border-zinc-800 rounded p-4 space-y-2">
+          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest">
+            Amount ({isShares ? 'shares' : 'USD'})
+          </p>
+          <input
+            type="number"
+            placeholder={isShares ? "0.00" : "$0.00"}
+            className="w-full bg-transparent border border-zinc-700 focus:border-emerald-500 text-emerald-400 font-mono px-3 py-2 rounded text-sm outline-none transition-colors placeholder:text-zinc-700"
+            value={stockAmt}
+            onChange={(e) => { let v = Number(e.target.value); setStockAmt(v === 0 ? "" : v); }}
+          />
+        </div>
+      </div>
 
-        if (isBuy) {
-            await handleBuy(key);
-        } else {
-            await handleSell(key);
-        }
-        console.log("Transaction successful");        
-    }
-
-    const getOrCreatePortfolio = async (leagueMemberId) => {
-        let { data: portfolio, error } = await supabase
-            .from("portfolios")
-            .select("*")
-            .eq("league_member_id", leagueMemberId)
-            .single();
-
-        if (error && error.code !== "PGRST116") {
-            // PGRST116 is "Results contain 0 rows" – not an actual error
-            setError("Error fetching portfolio");
-            return null;
-        }
-
-        if (!portfolio) {
-            const { data: inserted, error: insertErr } = await supabase
-                .from("portfolios")
-                .insert({
-                    league_member_id: leagueMemberId,
-                    current_balance: 10000,
-                    start_of_week_total: 10000,
-                })
-                .select()
-                .single();
-
-            if (insertErr) {
-                setError("Error creating new portfolio");
-                return null;
-            }
-
-            return inserted;
-        }
-
-        return portfolio;
-    };
-
-    const checkHasTicker = async ({leagueMemberId, symbol}) =>
-    {
-        console.log("Checking user ownership of ticker:", symbol);
-        try{
-            const res = await fetch(`http://localhost:8000/hasTicker?leagueMemberId=${leagueMemberId}&ticker=${symbol}`);
-            const data = await res.json();
-            return data.has_ticker;
-        }
-        catch (err) {
-            console.error("Error checking user ownership ticker:", err);
-            return false;
-        }
-    }
-
-
-    const handleBuy = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares }) => {
-        const hasTicker = await checkHasTicker({ leagueMemberId, symbol });
-        if (!hasTicker) {
-         setError("You cannot trade this stock");
-         throw new Error("You cannot trade this stock");
-        }
-
-        const portfolio = await getOrCreatePortfolio(leagueMemberId);
-        if (!portfolio) return;
-
-        const shares = isShares ? stockAmt : stockAmt / vwap;
-        const totalCost = shares * vwap;
-
-        if (portfolio.current_balance < totalCost) {
-            setError("Insufficient balance");
-            return;
-        }
-
-        // Get current holding (if any)
-        const { data: holding, error: holdingErr } = await supabase
-            .from("holdings")
-            .select("*")
-            .eq("league_member_id", leagueMemberId)
-            .eq("ticker", symbol)
-            .single();
-
-        if (holding && !holdingErr) {
-            const newAmount = holding.stock_amount + shares;
-            const newUnitCost =
-                (holding.stock_amount * holding.stock_unit_cost + shares * vwap) / newAmount;
-
-            await supabase
-                .from("holdings")
-                .update({
-                    stock_amount: newAmount,
-                    stock_unit_cost: newUnitCost,
-                })
-                .eq("league_member_id", leagueMemberId)
-                .eq("ticker", symbol);
-        } else {
-            await supabase.from("holdings").insert({
-                league_member_id: leagueMemberId,
-                ticker: symbol,
-                stock_amount: shares,
-                stock_unit_cost: vwap,
-            });
-        }
-
-        await supabase
-            .from("portfolios")
-            .update({
-                current_balance: portfolio.current_balance - totalCost,
-            }).eq("league_member_id", leagueMemberId);
-    };
-
-
-
-    return (
-        <form
-          onSubmit={handleSubmit}
-          className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black p-6 rounded-lg text-white"
+      {/* Submit */}
+      <div className="flex gap-3 items-center">
+        <button
+          onClick={handleSubmit}
+          className={`border font-mono text-xs px-8 py-2.5 rounded tracking-widest uppercase transition-all duration-200 ${
+            isBuy
+              ? 'border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-black'
+              : 'border-red-500 text-red-400 hover:bg-red-500 hover:text-white'
+          }`}
         >
-          <h2 className="text-3xl font-bold mb-6 text-blue-400 text-center">
-            Buy / Sell Stocks
-          </h2>
-      
-          {/* Ticker Input and Price Info */}
-          <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800 space-y-2">
-            <div className="flex flex-wrap items-center gap-4">
-              <input
-                id="ticker"
-                type="text"
-                placeholder="Ticker"
-                className="bg-black text-white border border-white rounded px-3 py-2 outline-none focus:outline-blue-500"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") fetchStockInfo(e);
-                }}
-              />
-      
-              {loading && <p className="text-blue-300">Loading...</p>}
-              {stockError && !loading && (
-                <p className="text-red-600">{stockError}</p>
-              )}
-      
-              {result?.price_data && !loading && (
-                <>
-                  <p>
-                    <span className="text-blue-300 font-semibold">Price:</span>{" "}
-                    ${result.price_data.vwap}
-                  </p>
-                  <p>
-                    <span className="text-blue-300 font-semibold">Timestamp:</span>{" "}
-                    {new Date(result.price_data.timestamp).toLocaleString()}
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-      
-          {/* Toggle Buttons & Amount Input */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Buy/Sell Toggle */}
-            <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
-              <p className="text-blue-300 font-medium mb-2">Buy or Sell</p>
-              <div className="flex space-x-2">
-                <ButtonGroup
-                  optionOneString={"buy"}
-                  optionTwoString={"sell"}
-                  handleFunc={handleBuySell}
-                  toggleVariable={isBuy}
-                />
-              </div>
-            </div>
-      
-            {/* Shares/Dollars Toggle */}
-            <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
-              <p className="text-blue-300 font-medium mb-2">Units</p>
-              <div className="flex space-x-2">
-                <ButtonGroup
-                  optionOneString={"shares"}
-                  optionTwoString={"dollars"}
-                  handleFunc={handleSharesDollars}
-                  toggleVariable={isShares}
-                />
-              </div>
-            </div>
-      
-            {/* Amount Input */}
-            <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
-              <p className="text-blue-300 font-medium mb-2">Amount</p>
-              <input
-                id="amount"
-                type="number"
-                placeholder={`${isShares ? "Share amount" : "Dollar Amount"}`}
-                className="w-full bg-black text-white border border-white rounded px-3 py-2 outline-none focus:outline-blue-500"
-                value={stockAmt}
-                onChange={(e) => {
-                  let value = Number(e.target.value);
-                  if (value === 0) value = "";
-                  setStockAmt(value);
-                }}
-              />
-            </div>
-          </div>
-      
-          {/* Submit Button */}
-          <div className="mt-6 flex justify-center">
-            <button
-              type="submit"
-              className="bg-black text-white border border-white hover:bg-white hover:text-black transition-all duration-200 px-6 py-2 rounded-md font-medium"
-            >
-              Submit
-            </button>
-          </div>
-      
-          {/* Error Output */}
-          {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
-        </form>
-      );
-      
-}
+          {isBuy ? 'EXECUTE BUY' : 'EXECUTE SELL'}
+        </button>
+        {txSuccess && <span className="text-emerald-400 font-mono text-xs">✓ {txSuccess}</span>}
+        {error && <span className="text-red-400 font-mono text-xs">ERR: {error}</span>}
+      </div>
+    </div>
+  );
+};
 
 export default BuySellStock;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 
@@ -10,67 +10,87 @@ const SignIn = () => {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setSignInError(error.message);
     } else {
       setSignInError(null);
-      navigate("/dashboard"); // or home page
+      navigate("/dashboard");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-gray-900 via-black to-gray-900 flex items-center justify-center px-4">
-      <div className="bg-white/10 backdrop-blur-md border border-gray-600 rounded-xl shadow-xl p-8 w-full max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-4xl font-extrabold text-white tracking-wide mb-2">
-            Welcome Back
+    <div className="scanlines min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-black tracking-tight text-white font-mono">
+            FANTASY<span className="text-emerald-400">STOCKS</span>
           </h1>
-          <p className="text-gray-300 text-sm font-light">
-            Sign in to continue your fantasy trading journey.
+          <p className="text-zinc-600 text-xs font-mono mt-1 tracking-widest">
+            MARKET INTELLIGENCE FOR THE MODERN LEAGUE
           </p>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-5">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        {/* Card */}
+        <div className="relative bg-zinc-950 border border-zinc-800 rounded-lg p-8 glow-border accent-top">
+          <p className="text-xs font-mono text-emerald-500 tracking-widest uppercase mb-6">
+            // AUTHENTICATE_USER
+          </p>
 
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div>
+              <label className="block text-xs font-mono text-zinc-500 tracking-wider mb-1 uppercase">
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="trader@example.com"
+                className="w-full bg-black border border-zinc-800 focus:border-emerald-500 text-emerald-400 font-mono px-3 py-2.5 rounded text-sm outline-none transition-colors placeholder:text-zinc-700"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-md font-semibold transition duration-200"
-          >
-            Sign In
-          </button>
+            <div>
+              <label className="block text-xs font-mono text-zinc-500 tracking-wider mb-1 uppercase">
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                className="w-full bg-black border border-zinc-800 focus:border-emerald-500 text-emerald-400 font-mono px-3 py-2.5 rounded text-sm outline-none transition-colors placeholder:text-zinc-700"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-          {signInError && (
-            <p className="text-red-400 text-sm text-center mt-2">{signInError}</p>
-          )}
-        </form>
+            <button
+              type="submit"
+              className="w-full border border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-black font-mono text-xs py-3 rounded tracking-widest uppercase transition-all duration-200 mt-2"
+            >
+              Access Terminal
+            </button>
 
-        <p className="text-center text-gray-400 text-sm mt-6">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-indigo-400 hover:underline font-medium">
-            Sign Up
-          </a>
+            {signInError && (
+              <p className="text-red-400 text-xs font-mono text-center mt-2 border border-red-900 bg-red-950/30 rounded px-3 py-2">
+                ERR: {signInError}
+              </p>
+            )}
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-zinc-800 text-center">
+            <span className="text-zinc-600 text-xs font-mono">NO ACCOUNT? </span>
+            <a href="/signup" className="text-emerald-400 text-xs font-mono hover:text-emerald-300 tracking-wider">
+              REGISTER →
+            </a>
+          </div>
+        </div>
+
+        <p className="text-center text-zinc-700 text-xs font-mono mt-6">
+          ● SYSTEM ONLINE — v2.0.0
         </p>
       </div>
     </div>

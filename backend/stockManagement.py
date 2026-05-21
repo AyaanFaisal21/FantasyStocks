@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
 import os
 from pydantic import BaseModel
+from config import load_backend_env
 
 # Load environment variables early
-load_dotenv()
+load_backend_env()
 
 # Now safely read env vars
 API_KEY = os.getenv("ALPACA_API_KEY")
