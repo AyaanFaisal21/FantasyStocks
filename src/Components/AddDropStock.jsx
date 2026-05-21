@@ -5,6 +5,7 @@ import { DraftState } from "../constants/draftState";
 import Draft from "./Draft";
 import { UserDisplayWrapper } from "./ActiveUsers.jsx";
 import MakeAddDropAction from "./MakeAddDropAction.jsx";
+import { API_BASE_URL } from "../apiConfig";
 
 const DefaultMessage = ({ leagueId, setDraftState }) => {
   const { activeMap, draftState } = useDraftContext();
@@ -20,7 +21,7 @@ const DefaultMessage = ({ leagueId, setDraftState }) => {
         return;
       }
     }
-    const res = await fetch(`http://localhost:8000/draft/${leagueId}/start`, { method: "POST" });
+    const res = await fetch(`${API_BASE_URL}/draft/${leagueId}/start`, { method: "POST" });
     if (!res.ok) alert("Something went wrong");
     setDraftState(DraftState.IN_PROGRESS);
   }

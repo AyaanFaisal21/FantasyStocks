@@ -11,6 +11,7 @@ import ChatWindow from "./ChatWindow";
 import { generateMatchups } from "./matchups";
 import MatchupPage from "./matchupPage";
 import AppShell from "./AppShell.jsx";
+import { API_BASE_URL } from "../apiConfig";
 
 const tabs = ["Matchup", "Buy/Sell", "Portfolio", "Leaderboard", "Add/Drop", "Chat"];
 
@@ -98,7 +99,7 @@ const LeaguePage = () => {
 
   const calculateMatchups = async () => {
     try {
-      const response = await fetch("http://localhost:8000/run-matchups", {
+      const response = await fetch(`${API_BASE_URL}/run-matchups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

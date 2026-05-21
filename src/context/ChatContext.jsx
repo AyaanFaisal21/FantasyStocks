@@ -1,4 +1,5 @@
 import {createContext, useContext, useState, useEffect, useRef, useMemo} from "react";
+import { WS_BASE_URL } from "../apiConfig";
 
 export const ChatContext = createContext(null);
 
@@ -23,7 +24,7 @@ export function ChatContextProvider({leagueId, userId, members, children}) {
     );
 
     useEffect(() => {
-        const ws = new WebSocket(`ws://localhost:8000/chat/ws/${leagueId}/${userId}`)
+        const ws = new WebSocket(`${WS_BASE_URL}/chat/ws/${leagueId}/${userId}`)
         wsRef.current = ws; 
 
         const onMessage = (event) => { 

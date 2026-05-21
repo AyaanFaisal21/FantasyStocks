@@ -1,5 +1,6 @@
 import {createContext, useContext, useCallback, useState, useEffect, useRef, useMemo} from "react";
 import { DraftState } from "../constants/draftState";
+import { WS_BASE_URL } from "../apiConfig";
 
 export const DraftContext = createContext(null);
 
@@ -22,7 +23,7 @@ export function DraftContextProvider({leagueId, userId, members, children}) {
     const pendingRef = useRef([]);
 
     useEffect(() => {
-        const ws = new WebSocket(`ws://localhost:8000/draft/ws/${leagueId}/${userId}`)
+        const ws = new WebSocket(`${WS_BASE_URL}/draft/ws/${leagueId}/${userId}`)
         wsRef.current = ws; 
         
         const onMessage = (event) => { 

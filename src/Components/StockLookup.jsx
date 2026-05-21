@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL } from "../apiConfig";
 
 const StockLookup = () => {
 
@@ -14,7 +15,7 @@ const StockLookup = () => {
     e.preventDefault();
 
     try { 
-        const res = await fetch(`http://localhost:8000/price?ticker=${symbol}`);
+        const res = await fetch(`${API_BASE_URL}/price?ticker=${symbol}`);
         const data = await res.json();
 
         if (!res.ok) { 

@@ -44,6 +44,17 @@ CORS_ORIGINS=https://your-vercel-app.vercel.app,http://localhost:5173
 PORT=8000
 ```
 
+## Vercel frontend environment
+
+Set these in Vercel under `Project -> Settings -> Environment Variables`, then redeploy the frontend:
+
+```bash
+VITE_API_BASE_URL=https://api.ayaan-faisal.com
+VITE_WS_BASE_URL=wss://api.ayaan-faisal.com
+```
+
+The webhook secrets are separate from frontend connectivity. They only automate VPS redeploys after a new Docker image is pushed.
+
 ## Local backend container test
 
 From the repository root:

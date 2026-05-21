@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
+import { API_BASE_URL } from "../apiConfig";
 
 const MakeAddDropAction = ({leagueId, leagueMemberId, callBack = null}) => { 
   const [ticker, setTicker] = useState("");
@@ -37,7 +38,7 @@ const MakeAddDropAction = ({leagueId, leagueMemberId, callBack = null}) => {
     setUserStocks([]);
 
     try {
-      const res = await fetch("http://localhost:8000/add-stock", {
+      const res = await fetch(`${API_BASE_URL}/add-stock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,7 +64,7 @@ const MakeAddDropAction = ({leagueId, leagueMemberId, callBack = null}) => {
     setUserStocks([]);
 
     try {
-      const res = await fetch("http://localhost:8000/remove-stock", {
+      const res = await fetch(`${API_BASE_URL}/remove-stock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
+import { API_BASE_URL } from "../../apiConfig";
 
 const handleSell = async ({ leagueMemberId, symbol, stockAmt, vwap, isShares, setError }) => {
   const shares = isShares ? stockAmt : stockAmt / vwap;
@@ -87,7 +88,7 @@ const BuySellStock = ({ leagueMemberId }) => {
     setLoading(true);
     if (!symbol) { setStockError("Enter a stock ticker to fetch price!"); setLoading(false); return { error: true }; }
     try {
-      const res = await fetch(`http://localhost:8000/price?ticker=${symbol}`);
+      const res = await fetch(`${API_BASE_URL}/price?ticker=${symbol}`);
       const data = await res.json();
       if (!res.ok) { setStockError(data.detail || "Stock data not found."); return { error: true }; }
       else { setResult(data); return { result: data }; }
@@ -116,7 +117,7 @@ const BuySellStock = ({ leagueMemberId }) => {
 
   const checkHasTicker = async ({ leagueMemberId, symbol }) => {
     try {
-      const res = await fetch(`http://localhost:8000/hasTicker?leagueMemberId=${leagueMemberId}&ticker=${symbol}`);
+      const res = await fetch(`${API_BASE_URL}/hasTicker?leagueMemberId=${leagueMemberId}&ticker=${symbol}`);
       const data = await res.json();
       return data.has_ticker;
     } catch { return false; }
